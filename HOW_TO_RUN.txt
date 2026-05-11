@@ -1,0 +1,231 @@
+================================================================
+  SMART CLASS ATTENDANCE SYSTEM - COMPLETE GUIDE
+  Project Folder: D:\Attendance_Accurate
+================================================================
+
+SECTION 1: PROJECT FOLDER STRUCTURE
+-------------------------------------
+D:\Attendance_Accurate\
+│
+├── models\
+│   └── buffalo_s\              ← InsightFace face detection models (moved from C drive)
+│       ├── det_500m.onnx       ← Face detector
+│       ├── w600k_mbf.onnx      ← Face recognition embeddings
+│       ├── genderage.onnx
+│       ├── 1k3d68.onnx
+│       └── 2d106det.onnx
+│
+├── TrainingImage\              ← Student face image datasets
+│   └── 1_Aamir\               ← Folder per student: EnrollmentID_Name
+│       ├── Aamir_1_front_1.jpg
+│       └── ...
+│
+├── TrainingImageLabel\         ← Trained LBPH models
+│   ├── Trainer_1.yml           ← Per-student model (one per student)
+│   ├── Trainer_2.yml
+│   └── Trainner.yml            ← Combined model (kept for compatibility)
+│
+├── StudentDetails\
+│   └── studentdetails.csv      ← Student registry (Enrollment, Name)
+│
+├── Attendance\                 ← Attendance CSV files per subject
+│   └── SubjectName\
+│       └── SubjectName_Date_TimeSlot.csv
+│
+├── phone_detections\           ← Phone detection screenshots
+│   └── SubjectName\
+│       └── SubjectName_Timestamp.jpg
+│
+├── face_detection_yunet_2023mar.onnx  ← YuNet model (for registration)
+├── best.pt                     ← Custom phone detection model (KEEP HERE)
+├── takeImage.py                ← Student registration
+├── trainImage.py               ← Model training
+├── automaticAttedance.py       ← Attendance taking
+└── requirements.txt
+
+================================================================
+SECTION 2: ONE-TIME SETUP (do once per machine)
+================================================================
+
+Step 1 - Install Visual C++ Build Tools
+  Download: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+  Install: "Desktop development with C++" workload
+  Required for: insightface, onnxruntime compilation
+
+Step 2 - Activate virtual environment
+  Open Command Prompt:
+    cd D:\Attendance_Accurate
+    .venv\Scripts\activate
+
+Step 3 - Install all dependencies
+    pip install -r requirements.txt
+
+  If insightface fails:
+    pip install insightface onnxruntime --no-cache-dir
+
+Step 4 - Verify models folder
+  Check: D:\Attendance_Accurate\models\buffalo_s\
+  Must contain these 5 files:
+    det_500m.onnx
+    w600k_mbf.onnx
+    genderage.onnx
+    1k3d68.onnx
+    2d106det.onnx
+
+  If folder is empty or missing, run:
+    python -c "from insightface.app import FaceAnalysis; FaceAnalysis(name='buffalo_s', root='D:/Attendance_Accurate/models').prepare(ctx_id=-1)"
+  This downloads models. Then move them from C:\Users\ADMIN\.insightface\models\buffalo_s
+  to D:\Attendance_Accurate\models\buffalo_s\
+
+================================================================
+SECTION 3: HOW TO RUN - STEP BY STEP
+================================================================
+
+--- STEP A: STUDENT REGISTRATION ---
+1. Open Command Prompt
+2. cd D:\Attendance_Accurate
+3. .venv\Scripts\activate
+4. Run your main app (e.g. python main.py or the GUI launcher)
+5. In the GUI, go to Student Registration
+6. Enter: Student Name and Roll Number (Enrollment ID)
+7. Click "Take Images"
+8. A webcam window opens. Follow the on-screen instructions:
+   - Look STRAIGHT (500 images captured)
+   - Turn face LEFT (500 images)
+   - Turn face RIGHT (500 images)
+   - Tilt face UP (500 images)
+   - Tilt face DOWN (500 images)
+   Total: 2500 clean face images saved (NO bounding boxes in saved images)
+9. Dataset saved to: TrainingImage\<EnrollmentID>_<Name>\
+
+--- STEP B: TRAIN THE MODEL ---
+1. After registering one or more students, go to "Train Model" in the GUI
+2. Click "Train Image"
+3. The system will:
+   - Read each student's folder in TrainingImage\
+   - Create ONE personal model per student: Trainer_<ID>.yml
+   - Also save combined Trainner.yml
+4. Wait for "Training Complete" message
+
+IMPORTANT: Re-train every time you add a new student.
+           Each student gets their own model for accurate recognition.
+
+--- STEP C: TAKE ATTENDANCE ---
+1. Run the attendance module from the GUI
+2. Enter Subject Name (e.g. "Mathematics")
+3. Click "Start Attendance"
+4. A time slot selection window appears:
+   - Choose 3 time slots (e.g. 08:00, 09:00, 10:00)
+   - Click "CONFIRM SLOTS" then "Close & Start"
+5. Webcam opens automatically
+6. PHONE DETECTION runs continuously from start to end
+7. For each time slot:
+   - System waits until that time
+   - Then marks attendance for 60 seconds
+   - Registered students → Green box + Name
+   - Unknown persons  → Red box + "Unknown"
+8. Attendance saved to: Attendance\<SubjectName>\<SubjectName>_<Date>_<Time>.csv
+
+--- STEP D: VIEW RECORDS ---
+1. Go to Records module in GUI
+2. Select subject and record type
+3. View attendance sheets (CSV/Excel)
+
+================================================================
+SECTION 4: MODEL PLACEMENT REFERENCE
+================================================================
+
+MODEL                           CURRENT LOCATION
+------                          ----------------
+InsightFace buffalo_s/          D:\Attendance_Accurate\models\buffalo_s\
+YuNet (registration)            D:\Attendance_Accurate\face_detection_yunet_2023mar.onnx
+Phone detection (best.pt)       D:\Attendance_Accurate\best.pt
+Per-student LBPH                D:\Attendance_Accurate\TrainingImageLabel\Trainer_<ID>.yml
+
+All models are in the project folder (D drive).
+Do NOT use models from C:\Users\ADMIN\.insightface\ — they have been moved.
+
+--- HOW TO CHANGE THE INSIGHTFACE MODEL PATH LATER ---
+
+If you ever want to move the buffalo_s folder to a different location:
+
+  FILE TO EDIT:  D:\Attendance_Accurate\automaticAttedance.py
+
+  FIND this line (around line 48):
+    INSIGHTFACE_ROOT = BASE_DIR   # = D:\Attendance_Accurate
+
+  CHANGE it to wherever your new models folder will be.
+
+  RULE: InsightFace ALWAYS appends \models\buffalo_s to whatever root you give it.
+        So set INSIGHTFACE_ROOT to the PARENT of the "models" folder.
+
+  EXAMPLES:
+    Current setup:
+      buffalo_s is at:  D:\Attendance_Accurate\models\buffalo_s\
+      Set:              INSIGHTFACE_ROOT = BASE_DIR
+                        (BASE_DIR = D:\Attendance_Accurate automatically)
+
+    If you move to E drive:
+      buffalo_s is at:  E:\MyModels\buffalo_s\
+      Set:              INSIGHTFACE_ROOT = r"E:\MyModels"
+
+    If you put it in a shared folder:
+      buffalo_s is at:  C:\SharedModels\buffalo_s\
+      Set:              INSIGHTFACE_ROOT = r"C:\SharedModels"
+
+  SUMMARY: Only ONE line changes. Nothing else.
+  That single line is clearly labeled:
+    # INSIGHTFACE ROOT PATH — change THIS line if you ever move the models folder
+
+================================================================
+SECTION 5: COMMON PROBLEMS AND SOLUTIONS
+================================================================
+
+PROBLEM: InsightFace loads from C drive instead of D drive
+FIX: The code uses root=INSIGHTFACE_MODEL_DIR which points to
+     D:\Attendance_Accurate\models. Make sure models exist there.
+
+PROBLEM: "No trained models found"
+FIX: You must run Train Image AFTER registering students.
+     Check: D:\Attendance_Accurate\TrainingImageLabel\Trainer_1.yml exists
+
+PROBLEM: Phone detection showing false positives (mouth, earphone)
+FIX: Already fixed in code. Filters applied:
+     - Minimum box size: 40x60 pixels
+     - Aspect ratio limit: width/height < 3.5
+     - Confidence threshold: 0.65 (higher = stricter)
+     - Only best.pt model used (custom trained)
+
+PROBLEM: Unknown student wrongly showing as registered student
+FIX: Per-student models are used now. Each student has personal Trainer_<ID>.yml
+     Recognition threshold is 70 (lower = stricter). Adjust in code if needed:
+     THRESHOLD = 70  (line in automaticAttedance.py → recognize_face function)
+
+PROBLEM: Face not detected at distance
+FIX: InsightFace buffalo_s is designed for distance detection.
+     det_size=(640, 640) is set. Camera resolution is 1280x720.
+     Ensure good lighting in classroom.
+
+PROBLEM: "YuNet model not found"
+FIX: Check file exists: D:\Attendance_Accurate\face_detection_yunet_2023mar.onnx
+     This is only needed during student registration (takeImage.py)
+
+================================================================
+SECTION 6: ACCURACY NOTES
+================================================================
+
+- Each student has their own LBPH model (Trainer_<ID>.yml)
+  This means Student B's model was never trained on Student A's face
+  → False matching between students is greatly reduced
+
+- InsightFace buffalo_s detects faces in rows at distance
+  It will NOT detect walls, hanging clothes, or random objects as faces
+  (unlike old Haar cascades which had these issues)
+
+- Phone detection uses ONLY best.pt (your custom trained model)
+  yolov8m.pt has been removed because it was detecting mouths as phones
+  Size and aspect ratio filters provide additional false-positive protection
+
+================================================================
+  END OF GUIDE
+================================================================
