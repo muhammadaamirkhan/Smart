@@ -1,0 +1,385 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>View Records · SmartAttend</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--surface:#13131a;--card:#1a1a25;--border:#2a2a3d;
+  --primary:#7c5cbf;--glow:#9b6dff;--accent:#f0c040;--text:#e8e8f0;--muted:#6b6b8a;
+  --green:#3dd68c;--red:#f05070;--blue:#4a8fff;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(42,42,61,0.35) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(42,42,61,0.35) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;z-index:0;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;
+  justify-content:space-between;padding:0 40px;height:64px;
+  background:rgba(10,10,15,0.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--primary),var(--blue));
+  border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.brand-name{font-family:'Syne',sans-serif;font-weight:800;font-size:1.05rem}
+.brand-name span{color:var(--glow)}
+.nav-links{display:flex;gap:6px;align-items:center}
+.nav-links a{padding:6px 15px;border-radius:8px;text-decoration:none;font-size:0.87rem;
+  font-weight:500;color:var(--muted);transition:all 0.2s;border:1px solid transparent}
+.nav-links a:hover,.nav-links a.active{background:var(--card);color:var(--text);border-color:var(--border)}
+.user-chip{display:flex;align-items:center;gap:10px;margin-left:14px;
+  padding:5px 12px 5px 8px;border:1px solid var(--border);border-radius:100px;
+  background:var(--surface);font-size:0.82rem;color:var(--text)}
+.user-avatar{width:24px;height:24px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--blue));
+  display:flex;align-items:center;justify-content:center;font-size:0.78rem;
+  font-family:'Syne',sans-serif;font-weight:800;color:#fff}
+.logout-link{margin-left:6px;color:var(--muted);text-decoration:none;font-size:0.78rem;
+  border-left:1px solid var(--border);padding-left:10px;transition:color .2s}
+.logout-link:hover{color:var(--red)}
+
+.page{position:relative;z-index:1;padding:88px 32px 48px;max-width:1280px;margin:0 auto}
+.page-header{margin-bottom:28px}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);
+  text-decoration:none;font-size:0.85rem;margin-bottom:14px;transition:color 0.2s}
+.back:hover{color:var(--text)}
+.page-header h2{font-family:'Syne',sans-serif;font-weight:800;font-size:2rem}
+.page-header p{color:var(--muted);margin-top:6px;font-size:0.92rem}
+.layout{display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start}
+.sidebar{display:flex;flex-direction:column;gap:16px}
+.side-card{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.side-card-head{padding:14px 18px;border-bottom:1px solid var(--border);
+  font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;display:flex;
+  align-items:center;gap:8px}
+.search-box{padding:12px 16px;border-bottom:1px solid var(--border)}
+.search-box input{width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:9px 12px;color:var(--text);font-size:0.86rem;
+  font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s}
+.search-box input:focus{border-color:var(--primary)}
+.subj-list{max-height:340px;overflow-y:auto}
+.subj-item{padding:11px 16px;cursor:pointer;font-size:0.88rem;color:var(--muted);
+  border-bottom:1px solid var(--border);transition:all 0.18s;
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+.subj-item:last-child{border-bottom:none}
+.subj-item:hover{background:rgba(124,92,191,0.08);color:var(--text)}
+.subj-item.active-s{background:rgba(124,92,191,0.12);color:var(--glow);
+  border-left:3px solid var(--primary)}
+.subj-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.subj-actions{display:flex;gap:6px;flex-shrink:0}
+.icon-btn{background:transparent;border:1px solid var(--border);color:var(--muted);
+  width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:0.88rem;
+  display:flex;align-items:center;justify-content:center;transition:all .15s}
+.icon-btn:hover{color:var(--text);border-color:var(--primary)}
+.icon-btn.danger:hover{color:var(--red);border-color:var(--red)}
+.sess-list{max-height:280px;overflow-y:auto}
+.sess-item{padding:11px 18px;cursor:pointer;font-size:0.82rem;color:var(--muted);
+  border-bottom:1px solid var(--border);transition:all 0.18s}
+.sess-item:last-child{border-bottom:none}
+.sess-item:hover,.sess-item.active-s{background:rgba(74,143,255,0.08);color:var(--text)}
+.sess-item.active-s{color:var(--blue)}
+.empty-side{padding:18px;color:var(--muted);font-size:0.82rem;text-align:center}
+.main-panel{display:flex;flex-direction:column;gap:20px}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.table-head{padding:18px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.table-head-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem}
+.table-meta{font-size:0.78rem;color:var(--muted)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{padding:12px 20px;text-align:left;font-size:0.75rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);
+  border-bottom:1px solid var(--border);background:var(--surface)}
+.tbl td{padding:13px 20px;font-size:0.88rem;border-bottom:1px solid rgba(42,42,61,0.6)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(124,92,191,0.04)}
+.badge-enroll{display:inline-block;padding:3px 10px;background:rgba(74,143,255,0.12);
+  border:1px solid rgba(74,143,255,0.25);border-radius:6px;font-size:0.75rem;color:var(--blue)}
+.empty-table{padding:48px;text-align:center;color:var(--muted);font-size:0.9rem}
+.students-card{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.student-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1px;
+  background:var(--border)}
+.student-cell{background:var(--card);padding:16px;display:flex;flex-direction:column;
+  align-items:center;gap:8px}
+.stu-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--blue));
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  font-family:'Syne',sans-serif;font-weight:800}
+.stu-name{font-size:0.82rem;font-weight:500;text-align:center}
+.stu-id{font-size:0.72rem;color:var(--muted)}
+
+/* Phone-screenshot gallery */
+.gallery-card{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:14px;padding:18px}
+.shot-tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;cursor:pointer;transition:transform .18s,border-color .18s}
+.shot-tile:hover{transform:translateY(-2px);border-color:var(--red)}
+.shot-tile img{display:block;width:100%;height:120px;object-fit:cover;background:#000}
+.shot-meta{padding:8px 10px;font-size:0.72rem;color:var(--muted);
+  border-top:1px solid var(--border);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Header action buttons */
+.action-btns{display:flex;gap:8px;flex-wrap:wrap}
+.act-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;
+  border-radius:9px;font-size:0.82rem;font-weight:600;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface);color:var(--text);
+  text-decoration:none;transition:all .18s;font-family:'DM Sans',sans-serif}
+.act-btn:hover{transform:translateY(-1px)}
+.act-btn.primary{background:linear-gradient(135deg,var(--primary),var(--glow));
+  border-color:transparent;color:#fff}
+.act-btn.danger{background:rgba(240,80,112,0.08);border-color:rgba(240,80,112,0.4);color:var(--red)}
+.act-btn.danger:hover{background:rgba(240,80,112,0.18)}
+.act-btn:disabled{opacity:0.45;cursor:not-allowed}
+
+/* Lightbox */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;
+  align-items:center;justify-content:center;z-index:200;padding:24px;cursor:zoom-out}
+.lightbox.show{display:flex}
+.lightbox img{max-width:100%;max-height:100%;border-radius:12px;
+  box-shadow:0 24px 60px rgba(0,0,0,0.7)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);
+  border:1px solid var(--border);border-radius:12px;padding:14px 18px;
+  font-size:0.86rem;color:var(--text);z-index:300;
+  transform:translateY(100px);opacity:0;transition:all .25s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:var(--green)}
+.toast.err{border-color:var(--red)}
+</style></head><body>
+<nav>
+  <div class="brand"><div class="brand-icon">🎓</div>
+    <div class="brand-name">Smart<span>Attend</span></div></div>
+  <div class="nav-links">
+    <a href="/">Home</a><a href="/register">Register</a>
+    <a href="/attendance">Attendance</a><a href="/records" class="active">Records</a>
+    {% if current_user %}
+    <div class="user-chip">
+      <div class="user-avatar">{{ current_user[0]|upper }}</div>
+      <span>{{ current_user }}</span>
+      <a href="/logout" class="logout-link">Logout</a>
+    </div>
+    {% else %}<a href="/login">Sign in</a>{% endif %}
+  </div>
+</nav>
+<div class="page">
+  <div class="page-header">
+    <a href="/" class="back">← Back to Home</a>
+    <h2>Attendance Records</h2>
+    <p>Search by subject, view sessions and phone-detection screenshots, download as Excel, or delete a subject's whole record.</p>
+  </div>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="side-card">
+        <div class="side-card-head">📚 Subjects</div>
+        <div class="search-box">
+          <input id="searchBox" type="text" placeholder="Search subject..." autocomplete="off">
+        </div>
+        <div class="subj-list" id="subjList"><div class="empty-side">Loading...</div></div>
+      </div>
+      <div class="side-card">
+        <div class="side-card-head">📅 Sessions</div>
+        <div class="sess-list" id="sessList"><div class="empty-side">Select a subject</div></div>
+      </div>
+    </div>
+    <div class="main-panel">
+      <div class="table-card">
+        <div class="table-head">
+          <div>
+            <div class="table-head-title" id="tableTitle">Select a session to view attendance</div>
+            <div class="table-meta" id="tableMeta"></div>
+          </div>
+          <div class="action-btns" id="subjActions" style="display:none">
+            <a class="act-btn primary" id="btnDownload" href="#">⬇ Download Excel</a>
+            <button class="act-btn danger" id="btnDelete">🗑 Delete Subject</button>
+          </div>
+        </div>
+        <div id="tableBody"><div class="empty-table">← Choose a subject and session from the sidebar</div></div>
+      </div>
+
+      <div class="gallery-card" id="galleryCard" style="display:none">
+        <div class="table-head">
+          <div>
+            <div class="table-head-title">📱 Phone Detection Screenshots</div>
+            <div class="table-meta" id="galleryMeta"></div>
+          </div>
+        </div>
+        <div id="galleryBody">
+          <div class="empty-table">No phone-detection screenshots yet for this subject.</div>
+        </div>
+      </div>
+
+      <div class="students-card">
+        <div class="table-head"><div class="table-head-title">👥 Registered Students</div>
+          <div class="table-meta" id="stuCount"></div></div>
+        <div class="student-grid" id="stuGrid"><div class="empty-table">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('show')"><img id="lightboxImg"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+let allSubjects = [];
+let curSubj = '';
+let curSess = '';
+
+function showToast(msg, kind='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+kind;
+  requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+async function loadSubjects(){
+  const data = await fetch('/api/records/subjects').then(r=>r.json());
+  allSubjects = data;
+  renderSubjects();
+}
+
+function renderSubjects(){
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  const list = q ? allSubjects.filter(s=>s.toLowerCase().includes(q)) : allSubjects;
+  const el = document.getElementById('subjList');
+  if(!list.length){
+    el.innerHTML = '<div class="empty-side">'+(q?'No matches':'No subjects yet')+'</div>';
+    return;
+  }
+  el.innerHTML = list.map(s=>`
+    <div class="subj-item${s===curSubj?' active-s':''}" data-name="${encodeURIComponent(s)}">
+      <span class="subj-name" title="${s}">${s}</span>
+      <span class="subj-actions">
+        <button class="icon-btn" title="Download Excel"
+          onclick="event.stopPropagation();downloadSubject('${encodeURIComponent(s)}')">⬇</button>
+        <button class="icon-btn danger" title="Delete subject"
+          onclick="event.stopPropagation();deleteSubject('${encodeURIComponent(s)}')">🗑</button>
+      </span>
+    </div>`).join('');
+  el.querySelectorAll('.subj-item').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      const name = decodeURIComponent(item.dataset.name);
+      selectSubject(name);
+    });
+  });
+}
+
+document.getElementById('searchBox').addEventListener('input', renderSubjects);
+
+async function selectSubject(s){
+  curSubj = s; curSess = '';
+  renderSubjects();
+  document.getElementById('subjActions').style.display='flex';
+  document.getElementById('btnDownload').href = '/api/records/download?subject=' + encodeURIComponent(s);
+  document.getElementById('tableTitle').textContent = s + ' — select a session';
+  document.getElementById('tableMeta').textContent = '';
+  document.getElementById('tableBody').innerHTML = '<div class="empty-table">Pick a session from the left to view attendance.</div>';
+  // sessions list
+  const sessions = await fetch('/api/records/sessions?subject='+encodeURIComponent(s)).then(r=>r.json());
+  const sl = document.getElementById('sessList');
+  if(!sessions.length){
+    sl.innerHTML = '<div class="empty-side">No sessions found for this subject</div>';
+  } else {
+    sl.innerHTML = sessions.map(f=>`<div class="sess-item" data-name="${encodeURIComponent(f)}">${f}</div>`).join('');
+    sl.querySelectorAll('.sess-item').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const f = decodeURIComponent(el.dataset.name);
+        selectSession(el, f);
+      });
+    });
+  }
+  // phone-detection gallery
+  loadPhoneShots(s);
+}
+
+async function selectSession(el, f){
+  curSess = f;
+  document.querySelectorAll('.sess-item').forEach(e=>e.classList.remove('active-s'));
+  el.classList.add('active-s');
+  const data = await fetch(`/api/records/data?subject=${encodeURIComponent(curSubj)}&session=${encodeURIComponent(f)}`).then(r=>r.json());
+  document.getElementById('tableTitle').textContent = f.replace('.csv','');
+  document.getElementById('tableMeta').textContent = `${data.rows.length} student(s) present`;
+  if(!data.rows.length){
+    document.getElementById('tableBody').innerHTML = '<div class="empty-table">No records in this session</div>';
+    return;
+  }
+  const thead = `<thead><tr>${data.headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>`;
+  const tbody = `<tbody>${data.rows.map(r=>`<tr>${r.map((c,ci)=>
+    `<td>${ci===0?`<span class="badge-enroll">${c}</span>`:c}</td>`
+  ).join('')}</tr>`).join('')}</tbody>`;
+  document.getElementById('tableBody').innerHTML = `<table class="tbl">${thead}${tbody}</table>`;
+}
+
+async function loadPhoneShots(subject){
+  const card = document.getElementById('galleryCard');
+  const body = document.getElementById('galleryBody');
+  const meta = document.getElementById('galleryMeta');
+  card.style.display = 'block';
+  body.innerHTML = '<div class="empty-table">Loading...</div>';
+  meta.textContent = '';
+  const shots = await fetch('/api/records/phone_screenshots?subject='+encodeURIComponent(subject)).then(r=>r.json());
+  if(!shots.length){
+    body.innerHTML = '<div class="empty-table">No phone-detection screenshots saved for this subject.</div>';
+    return;
+  }
+  meta.textContent = shots.length + ' screenshot(s)';
+  body.innerHTML = '<div class="gallery-grid">' + shots.map(s=>{
+    const url = `/phone_image/${encodeURIComponent(subject)}/${encodeURIComponent(s.filename)}`;
+    const when = new Date(s.mtime*1000).toLocaleString();
+    return `<div class="shot-tile" onclick="openLightbox('${url}')">
+      <img loading="lazy" src="${url}" alt="phone detection">
+      <div class="shot-meta" title="${s.filename}">${when}</div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function openLightbox(url){
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightbox').classList.add('show');
+}
+
+function downloadSubject(encName){
+  window.location.href = '/api/records/download?subject=' + encName;
+}
+
+async function deleteSubject(encName){
+  const name = decodeURIComponent(encName);
+  if(!confirm(`Delete ALL records for "${name}"?\n\nThis removes:\n  • every attendance CSV under Attendance/${name}/\n  • every phone-detection screenshot under phone_detections/${name}/\n\nThis cannot be undone.`)){
+    return;
+  }
+  const r = await fetch('/api/records/delete_subject',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({subject:name})
+  });
+  const d = await r.json();
+  if(!d.ok){ showToast(d.msg||'Delete failed','err'); return; }
+  showToast(`Deleted "${name}"`,'ok');
+  if(curSubj===name){
+    curSubj=''; curSess='';
+    document.getElementById('subjActions').style.display='none';
+    document.getElementById('tableTitle').textContent='Select a session to view attendance';
+    document.getElementById('tableMeta').textContent='';
+    document.getElementById('tableBody').innerHTML='<div class="empty-table">← Choose a subject and session from the sidebar</div>';
+    document.getElementById('sessList').innerHTML='<div class="empty-side">Select a subject</div>';
+    document.getElementById('galleryCard').style.display='none';
+  }
+  loadSubjects();
+}
+
+document.getElementById('btnDelete').addEventListener('click', ()=>{
+  if(curSubj) deleteSubject(encodeURIComponent(curSubj));
+});
+
+async function loadStudents(){
+  const data = await fetch('/api/records/students').then(r=>r.json());
+  document.getElementById('stuCount').textContent = data.length + ' registered';
+  const g = document.getElementById('stuGrid');
+  if(!data.length){ g.innerHTML='<div class="empty-table">No students registered</div>'; return; }
+  g.innerHTML = data.map(s=>`
+    <div class="student-cell">
+      <div class="stu-avatar">${(s.Name||'?').charAt(0).toUpperCase()}</div>
+      <div class="stu-name">${s.Name}</div>
+      <div class="stu-id">#${s.Enrollment}</div>
+    </div>`).join('');
+}
+
+loadSubjects();
+loadStudents();
+</script></body></html>
